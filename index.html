@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ciencia de datos con una farmacia</title>
+<style>
+:root{--bg:#f6f8f7;--card:#fff;--ink:#14262b;--mute:#52666b;--line:#d5e0dd;--accent:#0f7b6c;--warm:#d98a1f;--code:#10242a;--codeink:#d6ece6}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--card:#15262a;--ink:#e6f1ee;--mute:#9db3b0;--line:#27403f;--accent:#3cc2ad;--warm:#f0a838;--code:#0a1416;--codeink:#cde8e1}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:56px 20px 36px;max-width:860px;margin:auto}
+h1{font:700 clamp(2rem,6vw,3.2rem)/1.1 Georgia,serif;margin:0 0 12px}
+h2{font:700 1.8rem/1.2 Georgia,serif;margin:0 0 8px}
+p{max-width:68ch}
+.sub{color:var(--mute);font-size:1.1rem}
+nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+nav div{max-width:860px;margin:auto;padding:10px 20px;display:flex;gap:18px;flex-wrap:wrap}
+nav a{color:var(--ink);text-decoration:none;font-weight:600}
+nav a:hover,nav a:focus-visible{color:var(--accent);outline:none;text-decoration:underline}
+section{max-width:860px;margin:auto;padding:44px 20px;border-bottom:1px solid var(--line)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0}
+.step{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);padding:14px 16px;border-radius:6px}
+.step b{display:block;margin-bottom:4px}
+pre{background:var(--code);color:var(--codeink);padding:16px;border-radius:6px;overflow-x:auto;font:13px/1.5 ui-monospace,Consolas,monospace}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin:16px 0}
+label{font-weight:600}
+input[type=range],select{accent-color:var(--accent);font:inherit}
+select{padding:4px 8px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+svg{width:100%;height:auto;display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0}
+.kpi{background:var(--card);border:1px solid var(--line);padding:12px 14px;border-radius:6px}
+.kpi small{color:var(--mute);display:block}
+.kpi strong{font-size:1.5rem}
+.tree,.tree ul{list-style:none;margin:0;padding-left:22px;border-left:2px solid var(--line)}
+.tree{border:0;padding:0}
+.tree li{margin:8px 0}
+.q{background:var(--accent);color:#fff;padding:3px 10px;border-radius:4px;font-weight:600}
+.leaf{background:var(--warm);color:#1b1200;padding:3px 10px;border-radius:4px;font-weight:600}
+footer{max-width:860px;margin:auto;padding:28px 20px;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth;scroll-padding-top:56px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ciencia de datos aplicada a una farmacia</h1>
+  <p class="sub">Cuatro temas vistos en clase, explicados con un mismo ejemplo: las ventas de una farmacia.</p>
+</header>
+<nav><div><a href="#etl">ETL</a><a href="#regresion">Regresión lineal</a><a href="#arboles">Árboles de decisión</a><a href="#dashboard">Dashboard</a></div></nav>
+
+<section id="etl">
+  <h2>Proceso de ETL</h2>
+  <p>ETL son las siglas de Extraer, Transformar y Cargar. Es el camino que siguen los datos desde su origen hasta quedar listos para analizarse.</p>
+  <div class="steps">
+    <div class="step"><b>Extract (extraer)</b>Leer los datos de su origen: un CSV de ventas, una base de datos o una API.</div>
+    <div class="step"><b>Transform (transformar)</b>Limpiar y ordenar: quitar duplicados, rellenar vacíos, corregir tipos y calcular columnas nuevas.</div>
+    <div class="step"><b>Load (cargar)</b>Guardar el resultado limpio en su destino: un archivo, una base de datos o un dashboard.</div>
+  </div>
+<pre>import pandas as pd
+
+# E: extraer
+df = pd.read_csv("ventas_farmacia.csv")
+
+# T: transformar
+df = df.drop_duplicates()
+df["Precio"] = df["Precio"].fillna(df["Precio"].mean())
+df["Producto"] = df["Producto"].str.strip().str.title()
+df["Ingresos"] = df["Precio"] * df["Unidades_Vendidas"]
+
+# L: cargar
+df.to_csv("ventas_limpias.csv", index=False)</pre>
+</section>
+
+<section id="regresion">
+  <h2>Regresión lineal</h2>
+  <p>La regresión lineal encuentra la recta que mejor describe la relación entre dos variables y permite predecir una a partir de la otra. Aquí: cuántas gripas atiende la farmacia en una semana según los grados de frío.</p>
+  <div class="panel">
+    <svg id="reg" viewBox="0 0 600 300" role="img" aria-label="Gráfica de regresión lineal"></svg>
+    <p id="regTxt"></p>
+    <label for="x">Predecir con una temperatura de <span id="xv">10</span> °C</label><br>
+    <input id="x" type="range" min="0" max="25" value="10">
+    <p id="pred"></p>
+  </div>
+<pre>from sklearn.linear_model import LinearRegression
+
+modelo = LinearRegression()
+modelo.fit(X, y)               # X = temperatura, y = ventas
+print(modelo.coef_, modelo.intercept_)
+print(modelo.predict([[10]]))</pre>
+</section>
+
+<section id="arboles">
+  <h2>Árboles de decisión</h2>
+  <p>Un árbol de decisión clasifica con una serie de preguntas de sí o no. Cada pregunta divide los datos hasta llegar a una respuesta final. Ejemplo: decidir si un producto conviene tener siempre en stock.</p>
+  <div class="panel">
+    <ul class="tree">
+      <li><span class="q">¿Se venden más de 80 unidades al mes?</span>
+        <ul>
+          <li>Sí → <span class="leaf">Mantener stock alto</span></li>
+          <li>No → <span class="q">¿Se vende más de 40 unidades?</span>
+            <ul>
+              <li>Sí → <span class="leaf">Stock medio y revisar cada mes</span></li>
+              <li>No → <span class="leaf">Pedir solo bajo demanda</span></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+<pre>from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+arbol = DecisionTreeClassifier(max_depth=2, random_state=42)
+arbol.fit(X, y)
+plot_tree(arbol, feature_names=["Unidades_Vendidas"], filled=True)</pre>
+</section>
+
+<section id="dashboard">
+  <h2>Dashboard</h2>
+  <p>Un dashboard reúne en una sola pantalla los indicadores clave y gráficas para tomar decisiones rápido. Este usa datos de ejemplo de 12 productos.</p>
+  <div class="kpis">
+    <div class="kpi"><small>Unidades vendidas</small><strong id="k1"></strong></div>
+    <div class="kpi"><small>Ingresos</small><strong id="k2"></strong></div>
+    <div class="kpi"><small>Producto más vendido</small><strong id="k3"></strong></div>
+  </div>
+  <div class="panel">
+    <label for="ord">Ordenar por</label>
+    <select id="ord"><option value="u">Unidades vendidas</option><option value="i">Ingresos</option></select>
+    <svg id="bars" role="img" aria-label="Gráfica de barras de productos"></svg>
+  </div>
+</section>
+
+<footer>Remedial de ciencia de datos. Proyecto hecho con HTML, CSS y JavaScript.</footer>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+
+/* Regresión lineal */
+const T=[2,5,8,11,14,17,20,23], V=[88,80,71,63,55,47,38,30];
+const n=T.length, mx=T.reduce((a,b)=>a+b)/n, my=V.reduce((a,b)=>a+b)/n;
+let sxy=0,sxx=0,syy=0;
+T.forEach((x,i)=>{sxy+=(x-mx)*(V[i]-my);sxx+=(x-mx)**2;syy+=(V[i]-my)**2});
+const m=sxy/sxx, b=my-m*mx, r2=sxy*sxy/(sxx*syy);
+function drawReg(){
+  const s=document.getElementById("reg");s.innerHTML="";
+  const X=x=>50+x*22, Y=y=>270-(y-20)*3;
+  el("line",{x1:50,y1:270,x2:580,y2:270,stroke:css("--mute")},s);
+  el("line",{x1:50,y1:20,x2:50,y2:270,stroke:css("--mute")},s);
+  el("line",{x1:X(0),y1:Y(m*0+b),x2:X(25),y2:Y(m*25+b),stroke:css("--accent"),"stroke-width":3},s);
+  T.forEach((x,i)=>el("circle",{cx:X(x),cy:Y(V[i]),r:6,fill:css("--warm")},s));
+  const xp=+document.getElementById("x").value;
+  el("circle",{cx:X(xp),cy:Y(m*xp+b),r:8,fill:"none",stroke:css("--ink"),"stroke-width":2},s);
+  el("text",{x:315,y:296,"text-anchor":"middle",fill:css("--mute"),"font-size":13},s).textContent="Temperatura (°C)";
+  const t=el("text",{x:14,y:150,fill:css("--mute"),"font-size":13,transform:"rotate(-90 14 150)","text-anchor":"middle"},s);t.textContent="Consultas por gripa";
+}
+function updReg(){
+  const xp=+document.getElementById("x").value;
+  document.getElementById("xv").textContent=xp;
+  document.getElementById("pred").textContent="Predicción: unas "+Math.round(m*xp+b)+" consultas por gripa esa semana.";
+  drawReg();
+}
+document.getElementById("regTxt").textContent="Ecuación: y = "+m.toFixed(2)+"x + "+b.toFixed(1)+" (R² = "+r2.toFixed(3)+"). Por cada grado que baja la temperatura, aumentan unas "+Math.abs(m).toFixed(1)+" consultas.";
+document.getElementById("x").addEventListener("input",updReg);
+
+/* Dashboard */
+const P=[["Paracetamol",15,120],["Ibuprofeno",28,95],["Amoxicilina",85,40],["Loratadina",32,60],["Omeprazol",45,70],["Vitamina C",55,30],["Alcohol",20,110],["Jarabe para la tos",60,25],["Gasas",12,85],["Termómetro",150,8],["Cubrebocas",30,100],["Suero oral",22,55]].map(([p,pr,u])=>({p,u,i:pr*u}));
+document.getElementById("k1").textContent=P.reduce((a,x)=>a+x.u,0);
+document.getElementById("k2").textContent="$"+P.reduce((a,x)=>a+x.i,0).toLocaleString("es-MX");
+document.getElementById("k3").textContent=[...P].sort((a,c)=>c.u-a.u)[0].p;
+function drawBars(){
+  const k=document.getElementById("ord").value, d=[...P].sort((a,c)=>c[k]-a[k]);
+  const s=document.getElementById("bars");s.innerHTML="";
+  const mxv=d[0][k], H=d.length*30+10;
+  s.setAttribute("viewBox","0 0 600 "+H);
+  d.forEach((x,i)=>{
+    const y=i*30+6, w=(x[k]/mxv)*340;
+    el("text",{x:140,y:y+16,"text-anchor":"end",fill:css("--ink"),"font-size":13},s).textContent=x.p;
+    el("rect",{x:150,y:y,width:w,height:20,rx:3,fill:css("--accent")},s);
+    el("text",{x:156+w,y:y+15,fill:css("--mute"),"font-size":12},s).textContent=k==="i"?"$"+x.i:x.u;
+  });
+}
+document.getElementById("ord").addEventListener("change",drawBars);
+function all(){updReg();drawBars()}
+all();
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",all);
+</script>
+</body>
+</html>
